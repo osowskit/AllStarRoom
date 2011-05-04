@@ -41,7 +41,9 @@ function loadXMLDoc()
 	$.post("createSession.php",
 		"userid="+ userId,
 		function(data){			
-			//Save new session ID			
+			//Save new session ID
+			if (data == "") 
+				alert("Error: have you replaced your API key and set up the DB?");
 			userSessions[userId] = data;
 			document.getElementById("sessionIdDiv").innerHTML=userSessions[userId];
 			show('startVideoLink');		
