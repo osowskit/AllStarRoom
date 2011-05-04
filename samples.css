@@ -1,0 +1,142 @@
+@charset "UTF-8";
+/* CSS Document 
+ *
+ * Copyright 2010, TokBox, Inc.
+ *
+ */
+
+body, html {
+	font-family:'Lucida Grande', 'Trebuchet MS', sans-serif;
+	color: #4c4c4c;
+	text-align:left;
+	
+	background-color: #f0f9fb;
+}
+h1 {
+	margin-bottom:10px
+}
+object {
+	float: left;
+}
+a,a:visited {
+	color: #0099CC;
+	text-decoration: none;
+}
+a:hover {
+	text-decoration: underline;
+}
+
+#tokbox_console {
+	float: right;
+	background-color: #CCCCCC;
+	width: 400px;
+}
+
+#links {
+	float: top;
+}
+
+#links a {
+	display: none;
+}
+
+#action a {
+	display:block;
+}
+
+#localview {
+	float: left;
+	
+}
+
+div.controls {
+	width:220px;
+	padding:10 0 10 0;
+	font-size: 14px;
+}
+
+#videobar {
+	float: top;	
+}
+
+.smalltype {
+	font-size: 80%;
+	padding-bottom: 6px;
+}
+
+.description {
+	font-size: 90%;
+	padding-top: 6px;
+}
+
+#controls {
+	float: left;
+	text-align: left;
+	padding-right: 10px;
+}
+#publisher-controls {
+	display: none;
+}
+#push-to-talk {
+	padding-top: 5px;
+	display: none;
+}
+#devicePanelContainer {
+	position: absolute;
+	left: 250px;
+	top: 10px;
+	display:none;
+}
+#devicePanelCloseButton {
+	position: relative;
+	z-index: 10;
+	margin-left: 285px;
+	margin-right: 12px;
+	padding: 3px;
+	text-align: center;
+	font-size: 11px;
+	background-color: lightgrey;
+}
+#devicePanelBackground {
+	background-color: lightgrey;
+	width: 340px;
+	height: 230px;
+}
+#devicePanelInset #devicePanel {
+	position: relative;
+	top: -74px;
+	left: -9px;
+}
+
+a.settingsClose:link,
+a.settingsClose:visited,
+a.settingsClose:hover {
+	text-decoration: none;
+	cursor: auto;
+}
+
+table {
+	clear: both;
+}
+
+td {
+	vertical-align: top;
+	padding-right: 15px;
+}
+
+.publisherContainer {
+	float: left;
+}
+
+.newUserClass {
+    float: left;
+    display: none;    
+}
+
+
+.subscriberContainer {
+	width: 264px;
+	margin-left: 4px;
+	float:left;
+}
+

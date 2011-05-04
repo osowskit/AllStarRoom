@@ -1,0 +1,333 @@
+<html>
+<head>
+<script src="http://code.jquery.com/jquery-1.5.1.min.js" type="text/javascript"></script>
+<script src="http://staging.tokbox.com/v0.91/js/TB.min.js"></script>
+<link href="samples.css" type="text/css" rel="stylesheet" >
+<script type="text/javascript">
+
+	var apiKey = "259551"; // OpenTok sample code key. Replace with your own API key.
+	//var sessionId = 0; // Replace with your own session ID.
+	var token = "devtoken";
+		
+	var userSessions 	= {}
+	var session 		= {};
+	var publisher		= {};
+	var subscribers 	= {};
+	var sessionStream	= "";
+
+function getSelectedUser(){	
+    var userId = $('#userList').val();
+	return userId;
+}
+
+function getSelectedUserName(){
+    var userName	= $('#userList option:selected').text();
+	return userName;
+}
+
+	
+function loadXMLDoc()
+{
+	//get selected user
+	var userId = getSelectedUser();    
+	 
+	//Create new user
+	if (userId == -1)
+	{
+		show('newUser');    	
+		return;
+    }
+	
+	$.post("createSession.php",
+		"userid="+ userId,
+		function(data){			
+			//Save new session ID			
+			userSessions[userId] = data;
+			document.getElementById("sessionIdDiv").innerHTML=userSessions[userId];
+			show('startVideoLink');		
+		}
+	);
+}
+
+
+function loadUsers()
+{
+	$.get(
+		"returnUsers.php",
+		function(msg)
+		{	
+			//Build select dropdown from php			
+			document.getElementById("myDiv").innerHTML=msg;
+
+			//Add function to handle changing users
+			var mySelect = document.getElementById("userList");		
+			mySelect.onchange=loadXMLDoc;
+		},
+		"html"
+	);
+}
+
+
+loadUsers();
+
+
+function startVideo()
+{
+	var userId = getSelectedUser();	
+	var sessionId = userSessions[userId];
+	
+	if(sessionId != 0)
+	{		
+
+		TB.setLogLevel(4);
+		TB.addEventListener("exception", exceptionHandler);
+
+		if (TB.checkSystemRequirements() != TB.HAS_REQUIREMENTS) {
+			alert('Minimum System Requirements not met!');
+		} else {
+
+			session[sessionId] 	= TB.initSession(sessionId);	// Initialize session
+			var thisSession 	= session[sessionId];		
+			
+			thisSession.addEventListener('sessionConnected', sessionConnectedHandler);
+			thisSession.addEventListener('sessionDisconnected', sessionDisconnectedHandler);
+			thisSession.addEventListener('connectionCreated', connectionCreatedHandler);
+			thisSession.addEventListener('connectionDestroyed', connectionDestroyedHandler);
+			thisSession.addEventListener('streamCreated', streamCreatedHandler);
+			thisSession.addEventListener('streamDestroyed', streamDestroyedHandler);
+		}		
+	}
+	connect();
+}
+
+
+function addUser()
+{		
+	//Validate required fields
+	if ($("#firstname").val().length == 0 ||
+			$("#lastname").val().length == 0 ) 
+	{
+		alert ('first and last name required');
+		return;
+	}
+			
+	var firstName	= $("#firstname").val();
+	var lastName 	= $("#lastname").val();	
+
+	//Validate optional fields		
+	var formSessionId	= 0;
+	if ($("#sessionId").val().length == 40) 
+	{
+		formSessionId 	= $("#sessionId").val();
+	}
+	
+	var formApiKey		= 0;
+	var formApiSecret 	= 0;
+	if ($('#apiKey').val().length > 0 && 
+		$('#apiSecret').val().length > 0)
+	{
+		formApiKey		= $('#apiKey').val();
+		formApiSecret	= $('#apiSecret').val();
+	}	
+	
+	$.post(
+		"newUser.php",
+		"firstName="+firstName+"&lastName="+lastName+"&sessionId="+formSessionId+"&apiKey="+formApiKey+"&apiSecret="+formApiSecret,
+		function(result){	
+			alert(result);
+			loadUsers();
+		}		
+	);
+
+	//Longhand	
+	//xmlhttp.open("POST","newUser.php?firstName="+firstName+"&lastName="+lastName+"&sessionId="+formSessionId+
+	//"&apiKey="+formApiKey+"&apiSecret="+formApiSecret ,true);	
+	//xmlhttp.send();
+	hide('newUser');
+	
+}
+
+function setSession(sessionId, streamId)
+{	 
+	$.post("setSession.php",
+		"userId="+getSelectedUser()+"&sessionId="+sessionId+"&streamId="+streamId);
+}
+
+function getSessionStream(userId)
+{		
+	$.post("getSession.php", 
+		"userId="+userId,
+		function(request)
+		{		
+			var myArray 	= request.split(",");
+			if (myArray)
+			{	
+				sessionStream = myArray[1];				
+			}
+		},
+		"text"
+	);
+}
+
+
+
+//--------------------------------------
+//  LINK CLICK HANDLERS
+//--------------------------------------
+
+function connect() {
+	var userId 		= getSelectedUser();
+	var sessionId 	= userSessions[userId];
+	
+	session[sessionId].connect(apiKey, token);
+	console.log('try to connect');	
+}
+
+function disconnect() {
+	var userId = getSelectedUser();
+	var sessionId = userSessions[userId];
+	
+	session[sessionId].disconnect();	
+	console.log('try to disconnect');
+}
+
+function publish() {
+	var userId 		= getSelectedUser();
+	var sessionId 	= userSessions[userId];
+
+	if (!publisher[sessionId]) {		
+		
+		var parentDiv = document.getElementById("myCamera");
+		var div = document.createElement('div');			// Create a replacement div for the publisher
+		div.setAttribute('id', 'opentok_publisher');
+		parentDiv.appendChild(div);
+		var userName = getSelectedUserName();
+		publisher[sessionId] = session[sessionId].publish('opentok_publisher',{name:userName,width:120,height:80} ); 	// Pass the replacement div id to the publish method	
+	}
+}
+
+function unpublish() {
+	var userId 		= getSelectedUser();
+	var sessionId 	= userSessions[userId];
+
+	if (publisher[sessionId]) {
+		session[sessionId].unpublish(publisher[sessionId]);
+	}
+	publisher[sessionId] = null;
+}
+
+//--------------------------------------
+//  OPENTOK EVENT HANDLERS
+//--------------------------------------
+
+function sessionConnectedHandler(event) {
+	// Subscribe to all streams currently in the Session
+	console.log("connected");
+	for (var i = 0; i < event.streams.length; i++) {
+		addStream(event.streams[i], event.target.sessionId);
+	}
+	show('publishLink');
+	show('disconnectLink');
+}
+
+function streamCreatedHandler(event) {
+	// Subscribe to these newly created streams
+	for (var i = 0; i < event.streams.length; i++) {
+		addStream(event.streams[i], event.target.sessionId);
+	}
+	show('unpublishLink');
+}
+
+function streamDestroyedHandler(event) {	
+	// This signals that a stream was destroyed. Any Subscribers will automatically be removed.
+	// This default behaviour can be prevented using event.preventDefault()
+}
+
+function sessionDisconnectedHandler(event) {
+	// This signals that the user was disconnected from the Session. Any subscribers and publishers
+	// will automatically be removed. T his default behaviour can be prevented using event.preventDefault()
+	
+	
+	publisher[event.target.sessionId] = null;
+	console.log('disconnected');
+}
+
+function connectionDestroyedHandler(event) {
+	// This signals that connections were destroyed
+}
+
+function connectionCreatedHandler(event) {
+	// This signals new connections have been created.
+}
+
+/*
+If you un-comment the call to TB.setEventLister(), above, OpenTok
+calls the exceptionHandler() method when exception events occur.
+You can modify this method to further process exception events.
+If you un-comment the call to TB.setLogLevel(), above, OpenTok
+automatically displays exception event messages.
+*/
+function exceptionHandler(event) {
+	alert("Exception: " + event.code + "::" + event.message);
+}
+
+//--------------------------------------
+//  HELPER METHODS
+//--------------------------------------
+
+function addStream(stream, sessionId) {
+	// Check if this is the stream that I am publishing. If not
+	// we choose to subscribe to the stream.
+	
+	var userId = getSelectedUser();
+	getSessionStream(userId);	
+	
+	if (stream.connection.connectionId == session[sessionId].connection.connectionId) {		
+		sessionStream = stream.streamId;
+		setSession(sessionId, sessionStream);
+		return;
+	}
+	var div = document.createElement('div');	// Create a replacement div for the subscriber
+	var divId = stream.streamId;	// Give the replacement div the id of the stream as its id
+	div.setAttribute('id', divId);
+	document.body.appendChild(div);
+	subscribers[stream.streamId] = session[sessionId].subscribe(stream, divId);
+}
+
+function show(id) {
+	document.getElementById(id).style.display = 'block';
+}
+
+function hide(id) {
+	document.getElementById(id).style.display = 'none';
+}	
+
+
+</script>
+</head>
+<body>
+
+<div id="myDiv"><h2></h2></div>
+<div id="sessionIdDiv"><h2></h2></div>
+<div id="myCamera">
+	<div id="links" style="align:left;width:75%">
+		<a href="#" onclick="javascript:startVideo();" id="startVideoLink">Connect</a>
+		<a href="#" onclick="javascript:publish();" id="publishLink">Publish Stream</a>
+		
+		<a href="#" onclick="javascript:unpublish()" id="unpublishLink">Unpublish</a>		
+		<a href="#" onclick="javascript:disconnect();" id="disconnectLink">Leave</a>		
+	</div>
+	
+	<div id="newUser" class="newUserClass" style="width:25%">		
+		<form action="newUser.php" method="post">
+			Firstname: 	<input type="text" id="firstname" /></br>
+			Lastname: 	<input type="text" id="lastname" /></br>
+			SessionId: 	<input type="text" id="sessionId" /></br>
+			API key: 	<input type="text" id="apiKey" /></br>
+			API secret: <input type="text" id="apiSecret" /></br>
+			<button type="button" onclick="javascript:addUser()">Save User</button>		
+		</form>
+	</div>
+</div>
+</body>
+</html>
