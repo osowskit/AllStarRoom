@@ -1,1 +1,25 @@
-Welcome AllStars
+//Author:   Thomas J Osowski
+//Company:  TokBox 2011
+
+
+Welcome to the AllStarRoom example
+
+This sample project requires a php-capable server with a mySQL database and 
+the OpenTok API server-side library.  Developed and tested using Apache.
+
+1. Copy this repository to a hosted web directory
+2. Update the OpenTok SDK directory to the latest.  The file SDK/API_Config.php
+    requires your personal API_KEY and API_SECRET entered.  See the following 
+    links for more information: 
+    
+    http://www.tokbox.com/opentok/api/tools/js/apikey
+    http://www.tokbox.com/opentok/api/tools/js/coderesources
+    
+3. Import the mySQL database tokboxDB.sql to your local DB.
+4. Modify the *.php files in the root directory to use a valid login to your DB
+   //Change this
+   $con = mysql_connect('localhost', 'thomas', 'default');
+   
+The application is provided as an educational tool and comes with no warrenty.  
+Use at your own risk.
+
